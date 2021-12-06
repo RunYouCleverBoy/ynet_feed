@@ -45,20 +45,20 @@ class FeedFragment : Fragment() {
             lifecycleScope.launchWhenResumed {
                 viewModel.requestFeedFor(uri, 5 * DateUtils.SECOND_IN_MILLIS)
             }
+        }
 
-            lifecycleScope.launchWhenResumed {
-                viewModel.resultsFlow.collect {
-                    adapter.submitList(it)
-                }
-            }
-
-            lifecycleScope.launchWhenResumed {
-                viewModel.busyFlow.collect {
-                    busySign.visibility = if (it) View.VISIBLE else View.INVISIBLE
-                    busySign.isIndeterminate = it
-                }
+        lifecycleScope.launchWhenResumed {
+            viewModel.resultsFlow.collect {
+                adapter.submitList(it)
             }
         }
+
+        lifecycleScope.launchWhenResumed {
+            viewModel.busyFlow.collect {
+                busySign.visibility = if (it) View.VISIBLE else View.INVISIBLE
+            }
+        }
+
     }
 
     companion object {

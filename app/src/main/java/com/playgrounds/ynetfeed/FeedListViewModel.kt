@@ -20,6 +20,7 @@ class FeedListViewModel(app: Application) : AndroidViewModel(app) {
     suspend fun requestFeedFor(uri: String, minPeriod: Long) {
         while (true) {
             ongoingUris.add(uri)
+            busyFlowMutable.emit(true)
             resultsFlowMutable.emit(repository.request(uri))
             ongoingUris.remove(uri)
             busyFlowMutable.tryEmit(ongoingUris.isNotEmpty())
