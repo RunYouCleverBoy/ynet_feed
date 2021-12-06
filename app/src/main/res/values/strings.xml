@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Ynet Feed</string>
+    <string name="socialandculture">SocialAndCulture</string>
+    <string name="social_and_culture">Social and Culture</string>
+    <string name="cars">Cars</string>
+    <string name="landing_button_text">Let\'s go</string>
+    <string name="date_field_format">Date: %s</string>
+    <string name="name_field_format">Name: %s</string>
+</resources>
