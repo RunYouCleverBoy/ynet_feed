@@ -1,20 +1,22 @@
 package com.playgrounds.ynetfeed
 
 import android.os.Bundle
-import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import androidx.fragment.app.Fragment
 import androidx.hilt.navigation.fragment.hiltNavGraphViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.playgrounds.ynetfeed.models.PostItemInfo
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 class FeedFragment : Fragment() {
     private val mainViewModel: ActivityViewModel by hiltNavGraphViewModels(R.id.navigation_xml)
@@ -41,21 +43,21 @@ class FeedFragment : Fragment() {
         val uris = arguments?.getStringArray(FEED_URI_KEY)
             ?: throw IllegalArgumentException("Expected an argument with URI")
 
-        uris.forEach { uri ->
-            lifecycleScope.launchWhenResumed {
-                viewModel.requestFeedFor(uri, 5 * DateUtils.SECOND_IN_MILLIS)
+        uris.forEach { viewModel.processUri(it) }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                viewModel.resultsFlow.collect {
+                    adapter.submitList(it)
+                }
             }
         }
 
-        lifecycleScope.launchWhenResumed {
-            viewModel.resultsFlow.collect {
-                adapter.submitList(it)
-            }
-        }
-
-        lifecycleScope.launchWhenResumed {
-            viewModel.busyFlow.collect {
-                busySign.visibility = if (it) View.VISIBLE else View.INVISIBLE
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                viewModel.busyFlow.collect {
+                    busySign.visibility = if (it) View.VISIBLE else View.INVISIBLE
+                }
             }
         }
 

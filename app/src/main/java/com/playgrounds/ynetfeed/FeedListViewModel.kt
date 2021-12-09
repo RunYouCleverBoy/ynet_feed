@@ -1,13 +1,16 @@
 package com.playgrounds.ynetfeed
 
 import android.app.Application
+import android.text.format.DateUtils
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.playgrounds.ynetfeed.models.PostItemInfo
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class FeedListViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = FeedRepository(app)
@@ -19,7 +22,13 @@ class FeedListViewModel(app: Application) : AndroidViewModel(app) {
     val resultsFlow = resultsFlowMutable.asStateFlow()
     val busyFlow = busyFlowMutable.asStateFlow()
 
-    suspend fun requestFeedFor(uri: String, minPeriod: Long) {
+    fun processUri(uri: String) {
+        viewModelScope.launch {
+            requestFeedFor(uri, 5 * DateUtils.SECOND_IN_MILLIS)
+        }
+    }
+
+    private suspend fun requestFeedFor(uri: String, minPeriod: Long) {
         coroutineScope {
             while (isActive) {
                 ongoingUris.add(uri)
@@ -31,5 +40,4 @@ class FeedListViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
-
 }
