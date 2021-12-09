@@ -44,14 +44,11 @@ class FeedFragment : Fragment() {
         uris.forEach { viewModel.processUri(it) }
 
         launchRepeatOn(Lifecycle.State.RESUMED) {
-            viewModel.resultsFlow.collect {
-                adapter.submitList(it)
-            }
-        }
-
-        launchRepeatOn(Lifecycle.State.RESUMED) {
-            viewModel.busyFlow.collect {
-                busySign.visibility = if (it) View.VISIBLE else View.INVISIBLE
+            viewModel.uiEventsFlow.collect { event ->
+                when (event) {
+                    is FeedListViewModel.UiEvent.NewData -> adapter.submitList(event.data)
+                    is FeedListViewModel.UiEvent.BusyUpdate -> busySign.visibility = if (event.busy) View.VISIBLE else View.INVISIBLE
+                }
             }
         }
     }

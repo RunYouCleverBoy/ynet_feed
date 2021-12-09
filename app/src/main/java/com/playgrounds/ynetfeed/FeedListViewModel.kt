@@ -7,20 +7,18 @@ import androidx.lifecycle.viewModelScope
 import com.playgrounds.ynetfeed.models.PostItemInfo
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class FeedListViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = FeedRepository(app)
-    private val resultsFlowMutable = MutableStateFlow<List<PostItemInfo>>(listOf())
 
     private val ongoingUris = mutableSetOf<String>()
-    private val busyFlowMutable = MutableStateFlow(false)
+    private val mutableUiEventFlow = MutableSharedFlow<UiEvent>()
 
-    val resultsFlow = resultsFlowMutable.asStateFlow()
-    val busyFlow = busyFlowMutable.asStateFlow()
+    val uiEventsFlow: SharedFlow<UiEvent> = mutableUiEventFlow
 
     fun processUri(uri: String) {
         viewModelScope.launch {
@@ -28,14 +26,20 @@ class FeedListViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    sealed interface UiEvent {
+        data class NewData(val data: List<PostItemInfo>) : UiEvent
+        data class BusyUpdate(val busy: Boolean) : UiEvent
+    }
+
     private suspend fun requestFeedFor(uri: String, minPeriod: Long) {
         coroutineScope {
             while (isActive) {
                 ongoingUris.add(uri)
-                busyFlowMutable.emit(true)
-                resultsFlowMutable.emit(repository.request(uri))
+                mutableUiEventFlow.emit(UiEvent.BusyUpdate(true))
+                val data = UiEvent.NewData(repository.request(uri))
+                mutableUiEventFlow.emit(data)
                 ongoingUris.remove(uri)
-                busyFlowMutable.tryEmit(ongoingUris.isNotEmpty())
+                mutableUiEventFlow.emit(UiEvent.BusyUpdate(ongoingUris.isNotEmpty()))
                 delay(minPeriod)
             }
         }
