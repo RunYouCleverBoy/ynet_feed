@@ -9,14 +9,12 @@ import androidx.fragment.app.Fragment
 import androidx.hilt.navigation.fragment.hiltNavGraphViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.playgrounds.ynetfeed.models.PostItemInfo
+import com.playgrounds.ynetfeed.utils.launchRepeatOn
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 
 class FeedFragment : Fragment() {
     private val mainViewModel: ActivityViewModel by hiltNavGraphViewModels(R.id.navigation_xml)
@@ -45,22 +43,17 @@ class FeedFragment : Fragment() {
 
         uris.forEach { viewModel.processUri(it) }
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                viewModel.resultsFlow.collect {
-                    adapter.submitList(it)
-                }
+        launchRepeatOn(Lifecycle.State.RESUMED) {
+            viewModel.resultsFlow.collect {
+                adapter.submitList(it)
             }
         }
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                viewModel.busyFlow.collect {
-                    busySign.visibility = if (it) View.VISIBLE else View.INVISIBLE
-                }
+        launchRepeatOn(Lifecycle.State.RESUMED) {
+            viewModel.busyFlow.collect {
+                busySign.visibility = if (it) View.VISIBLE else View.INVISIBLE
             }
         }
-
     }
 
     companion object {
